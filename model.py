@@ -5,25 +5,71 @@ from keras.models import Sequential
 from keras.layers import Flatten, Dense, Lambda, Cropping2D
 from keras.layers.convolutional import Conv2D
 
-lines = []
+import sklearn
 
-with open('./sample_data/data/data/driving_log.csv')as csvfile:
-    reader = csv.reader(csvfile)
-    for line in reader:
-        lines.append(line)
+def generator(samples, batch_size = 32):
+    num_samples = len(samples)
+    while True:
+        for offset in range(0, num_samples, batch_size):
+            batch_samples = samples[offset:offset + batch_size]
+            images = []
+            angles = []
+            for batch_sample in batch_samples:
+                name = './IMG/' + batch_sample[0].split('/')[-1]
+                center_image = cv2.imread(name)
+                center_angle = float(batch_sample[3])
+                images.append(center_image)
+                angles.append(center_angle)
+
+            # trim image to only see section with road
+            X_train = np.array(images)
+            y_train = np.array(angles)
+            yield sklearn.utils.shuffle(X_train, y_train)
+
+lines = []
+file_location = '/sample_data/data/data/'
 
 images = []
 measurements = []
 break_line = '\\'  # for windows \\, linux use /
 
-for line in lines:
-    source_path = line[0]
-    filename = source_path.split(break_line)[-1]
-    current_path = './sample_data/data/data/' + filename
-    image = cv2.imread(current_path)
-    images.append(image)
-    measurement = float(line[3])
-    measurements.append(measurement)
+steering_correction = 0.1
+
+with open(file_location + 'driving_log.csv')as csvfile:
+    reader = csv.reader(csvfile)
+    for line in reader:
+        lines.append(line)
+        steering_center = float(line[3])
+
+        steering_left = steering_center + steering_correction
+        steering_right = steering_center - steering_correction
+
+        source_path = line[0]
+        filename = source_path.split(break_line)[-1]
+        current_path = file_location + '/IMG/' + filename
+        image_center = cv2.imread(current_path)
+
+        source_path = line[1]
+        filename = source_path.split(break_line)[-1]
+        current_path = file_location + '/IMG/' + filename
+        image_left = cv2.imread(current_path)
+
+        source_path = line[2]
+        filename = source_path.split(break_line)[-1]
+        current_path = file_location + '/IMG/' + filename
+        image_right = cv2.imread(current_path)
+
+        images.extend(image_center, image_left, image_right)
+        measurements.extend((steering_center, steering_left, steering_right))
+
+# for line in lines:
+#     source_path = line[0]
+#     filename = source_path.split(break_line)[-1]
+#     current_path = file_location + '/IMG/' + filename
+#     image = cv2.imread(current_path)
+#     images.append(image)
+#     measurement = float(line[3])
+#     measurements.append(measurement)
 
 # Image processing
 augmented_images, augmented_measurements = [], []
@@ -49,7 +95,7 @@ model.add(Lambda(lambda x: x / 255. - 0.5))
 
 model.add(Conv2D(24, 5, strides=(2, 2), activation='elu'))
 model.add(Conv2D(36, 5, strides=(2, 2), activation='elu'))
-model.add(Conv2D(48, 5, strides=(2,2), activation='elu'))
+model.add(Conv2D(48, 5, strides=(2, 2), activation='elu'))
 model.add(Conv2D(64, 3, activation='elu'))
 model.add(Conv2D(64, 3, activation='elu'))
 model.add(Flatten())
