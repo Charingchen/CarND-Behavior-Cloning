@@ -2,29 +2,36 @@ import csv
 import cv2
 import numpy as np
 from keras.models import Sequential
-from keras.layers import Flatten, Dense, Lambda, Cropping2D
+from keras.layers import Flatten, Dense, Lambda, Cropping2D,Dropout
 from keras.layers.convolutional import Conv2D
 
 lines = []
 
-with open('./sample_data/data/data/driving_log.csv')as csvfile:
+data_location = './data/'
+
+with open(data_location+'driving_log.csv')as csvfile:
     reader = csv.reader(csvfile)
     for line in reader:
         lines.append(line)
 
 images = []
 measurements = []
-break_line = '\\'  # for windows \\, linux use /
+break_line = '\\'
+# for windows \\, linux use /
 
 for line in lines:
-    source_path = line[0]
-    filename = source_path.split(break_line)[-1]
-    current_path = './sample_data/data/data/' + filename
-    image = cv2.imread(current_path)
-    images.append(image)
-    measurement = float(line[3])
-    measurements.append(measurement)
+    if line[0] != '':
+        source_path = line[0]
+        filename = source_path.split(break_line)[-1]
+        current_path = data_location + 'IMG/' + filename
+        image = cv2.imread(current_path)
+        images.append(image)
+        measurement = float(line[3])
+        measurements.append(measurement)
 
+images = np.array(images)
+measurements= np.array(measurements)
+print(images.shape)
 # Image processing
 augmented_images, augmented_measurements = [], []
 # image flipping
@@ -52,13 +59,16 @@ model.add(Conv2D(36, 5, strides=(2, 2), activation='elu'))
 model.add(Conv2D(48, 5, strides=(2,2), activation='elu'))
 model.add(Conv2D(64, 3, activation='elu'))
 model.add(Conv2D(64, 3, activation='elu'))
+model.add(Dropout(0.5))
 model.add(Flatten())
-# model.add(Dense(1152,activation='elu'))
+# model.add(Dense(1152,activation='elu')) # Aadded val_loss around 0.07
 model.add(Dense(100, activation='elu'))
+model.add(Dropout(0.75))
 model.add(Dense(50, activation='elu'))
 model.add(Dense(10, activation='elu'))
 model.add(Dense(1, activation='elu'))
+
 model.summary()
 model.compile(loss='mse', optimizer='adam')
-model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=4)
-model.save('model_sample.h5')
+model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=5)
+model.save('model.h5')
