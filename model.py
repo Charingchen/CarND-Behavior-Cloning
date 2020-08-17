@@ -181,16 +181,3 @@ model.compile(loss='mse', optimizer='adam')
 
 history_object=model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=7)
 model.save('model_muti_v3.h5')
-# model.save('full_model')
-
-# ### print the keys contained in the history object
-# print(history_object.history.keys())
-# import matplotlib.pyplot as plt
-# ### plot the training and validation loss for each epoch
-# plt.plot(history_object.history['loss'])
-# plt.plot(history_object.history['val_loss'])
-# plt.title('model mean squared error loss')
-# plt.ylabel('mean squared error loss')
-# plt.xlabel('epoch')
-# plt.legend(['training set', 'validation set'], loc='upper right')
-# plt.show()
