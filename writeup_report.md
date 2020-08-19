@@ -1,11 +1,5 @@
 # **Behavioral Cloning** 
 
-## Writeup Template
-
-### You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
----
-
 **Behavioral Cloning Project**
 
 The goals / steps of this project are the following:
@@ -21,8 +15,9 @@ The goals / steps of this project are the following:
 [image1]: ./images/pilotNet.PNG "Model Visualization"
 [image2]: ./images/nn.svg "Model Visualization"
 [image3]: ./images/center.jpg "Model Visualization"
-[image4]: ./images/pilotNet.PNG "Model Visualization"
-[image5]: ./images/pilotNet.PNG "Model Visualization"
+[image4]: ./images/recover.gif "Model Visualization"
+[image5]: ./images/recover2.gif "Model Visualization"
+[image6]: ./images/Second_Track.gif "Model Visualization"
 
 ## Rubric Points
 ### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
@@ -74,9 +69,9 @@ For details about how I created the training data, see the next section.
 #### 1. Solution Design Approach
 First I used original un-changed PilotNet architecture as shown below. ![alt text][image1]
 
-I used Keras cropping 2D layers to crop out only the road image before feeding into the Convolution layers. The sky and hood of the car are not going to useful to determine the steering angle, therefore removed from the trainning data. Then, I applied a Lambda layer to normalize the image by dividing all channels to 255 and minus 0.5 to center around 0.
+I used Keras cropping 2D layers to crop out only the road image before feeding into the Convolution layers. The sky and hood of the car are not going to useful to determine the steering angle, therefore I removed those from the trainning data. Then, I applied a Lambda layer to normalize the image by dividing all channels to 255 and minus 0.5 to center around 0.
 
-In term of activation function, I found a paper talking about [exponential linear unit (ELU)](http://image-net.org/challenges/posters/JKU_EN_RGB_Schwarz_poster.pdf). Instead of using RELus, this ELU would avoid a vanishing gradient via the identity for positive values. So I decided to use this instead of RELUS.
+In term of the activation function, I found a paper talking about [exponential linear unit (ELU)](http://image-net.org/challenges/posters/JKU_EN_RGB_Schwarz_poster.pdf). Instead of using RELus, this ELU would avoid a vanishing gradient via the identity for positive values. So I decided to use this instead of RELUS.
 
 However, when I run this model and test in the simulator, the car would steer hard right and drove off the road with a determination. No correction behavior at all. 
 
@@ -107,28 +102,23 @@ Here is a visualization of the architecture
 
 #### 3. Creation of the Training Set & Training Process
 
-To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
+To capture good driving behavior, I first recorded one laps on track one using center lane driving and one lap reversed. Here is an example image of center lane driving:
 
 ![alt text][image3]
 
-I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to .... These images show what a recovery looks like starting from ... :
+I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to how to hard recover when it is at side of the track.
 
-![alt text][image3]
-![alt text][image4]
-![alt text][image5]
+![alt text][image4]![alt text][image5]
 
 Then I repeated this process on track two in order to get more data points.
 
-To augment the data sat, I also flipped images and angles thinking that this would ... For example, here is an image that has then been flipped:
-
 ![alt text][image6]
-![alt text][image7]
 
-Etc ....
+To augment the data sat, I also flipped every images and multiply the steering to -1 to gain 2x data. 
 
-After the collection process, I had X number of data points. I then preprocessed this data by ...
+After the collection process, I had 4852x3 number of images. and after the flipping the images, I have 29112 images to feed into the model.
 
 
-I finally randomly shuffled the data set and put Y% of the data into a validation set. 
+I finally randomly shuffled the data set and put 20% of the data into a validation set. 
 
-I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was Z as evidenced by ... I used an adam optimizer so that manually training the learning rate wasn't necessary.
+I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was 7. After 7 epochs, the vaildation loss would increase from 0.05 to 0.06 to 0.7 sometime. I used an adam optimizer so that manually training the learning rate wasn't necessary.
