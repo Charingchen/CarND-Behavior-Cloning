@@ -2,42 +2,134 @@
 
 [![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
-Overview
----
-This repository contains starting files for the Behavioral Cloning Project.
 
-In this project, you will use what you've learned about deep neural networks and convolutional neural networks to clone driving behavior. You will train, validate and test a model using Keras. The model will output a steering angle to an autonomous vehicle.
-
-We have provided a simulator where you can steer a car around a track for data collection. You'll use image data and steering angles to train a neural network and then use this model to drive the car autonomously around the track.
-
-We also want you to create a detailed writeup of the project. Check out the [writeup template](https://github.com/udacity/CarND-Behavioral-Cloning-P3/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup. The writeup can be either a markdown file or a pdf document.
-
-To meet specifications, the project will require submitting five files: 
-* model.py (script used to create and train the model)
-* drive.py (script to drive the car - feel free to modify this file)
-* model.h5 (a trained Keras model)
-* a report writeup file (either markdown or pdf)
-* video.mp4 (a video recording of your vehicle driving autonomously around the track for at least one full lap)
-
-This README file describes how to output the video in the "Details About Files In This Directory" section.
-
-Creating a Great Writeup
----
-A great writeup should include the [rubric points](https://review.udacity.com/#!/rubrics/432/view) as well as your description of how you addressed each point.  You should include a detailed description of the code used (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
-
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
-
-The Project
----
 The goals / steps of this project are the following:
-* Use the simulator to collect data of good driving behavior 
-* Design, train and validate a model that predicts a steering angle from image data
-* Use the model to drive the vehicle autonomously around the first track in the simulator. The vehicle should remain on the road for an entire loop around the track.
+* Use the simulator to collect data of good driving behavior
+* Build, a convolution neural network in Keras that predicts steering angles from images
+* Train and validate the model with a training and validation set
+* Test that the model successfully drives around track one without leaving the road
 * Summarize the results with a written report
 
-### Dependencies
+
+[//]: # (Image References)
+
+[image1]: ./images/pilotNet.PNG "Model Visualization"
+[image2]: ./images/nn.svg "Model Visualization"
+[image3]: ./images/center.jpg "Model Visualization"
+[image4]: ./images/recover.gif "Model Visualization"
+[image5]: ./images/recover2.gif "Model Visualization"
+[image6]: ./images/Second_Track.gif "Model Visualization"
+
+
+## Model Architecture and Training Strategy
+
+#### 1. An appropriate model architecture has been employed
+A modified [PilotNet](https://arxiv.org/pdf/1704.07911.pdf) was introduced. The modified decisions are explained below in the next section. The code is located between line 73 to 94 in model.py.  
+
+#### 2. Attempts to reduce overfitting in the model
+
+The model contains three dropout layers in order to reduce overfitting (model.py lines 88,90,92). All of them are located after dense layers and have a dropout rate of 50%.
+
+The model was trained and validated on different data sets to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
+
+#### 3. Model parameter tuning
+
+The model used an adam optimizer, so the learning rate was not tuned manually (model.py line 97).
+
+#### 4. Appropriate training data
+
+Training data was chosen to keep the vehicle driving on the road. I have one lap driving around the centre of the road. And I also include recover data driving from the side of the road and steer toward the centre.
+For details about how I created the training data, see the next section. 
+
+### Detailed Design and Approach
+
+#### 1. Solution Design Approach
+First I used original un-changed PilotNet architecture as shown below. ![alt text][image1]
+
+I used Keras cropping 2D layers to crop out only the road image before feeding into the Convolution layers. The sky and hood of the car are not going to useful to determine the steering angle, therefore I removed those from the trainning data. Then, I applied a Lambda layer to normalize the image by dividing all channels to 255 and minus 0.5 to center around 0.
+
+In term of the activation function, I found a paper talking about [exponential linear unit (ELU)](http://image-net.org/challenges/posters/JKU_EN_RGB_Schwarz_poster.pdf). Instead of using RELus, this ELU would avoid a vanishing gradient via the identity for positive values. So I decided to use this instead of RELUS.
+
+However, when I run this model and test in the simulator, the car would steer hard right and drove off the road with a determination. No correction behavior at all. 
+
+Therefore, I included the left and right camera images into the training data set with a steering angle correction. Then, the trained model shows steering correction behavior and able to turn back to the center couple times. But it still shows it would turn right more than turn left.
+
+Then I applied image mirroring to all the images I have to increase the  data set. After this, the model seems to have equivalent eight on right and left turns. 
+
+During last couple training, I noticed the model often get overfitted after 3-4 epochs. I realized the model might be too complicated for the this. After all, this model is aimed to drive a car in real world. Therefore, I remove the 1164 neurons dense layers to reduce complicity. I was able to drop down the validation loss from 0.07 to 0.05 in first few epochs.
+
+When the model train around 6,7 epochs, the validation loss start to become more than the training loss. I started to add dropout after each dense layers until I see the validation loss and training loss would be around the same at 7 epochs.
+
+Once the training loss and validation loss drops around 0.05, the trained model was able to drive around the trace without steering off the track.
+
+I also experiment changing the normalization method. Instead of dividing 255, i divided by 127.5 - 0.5. However, the model would perform poorly when there is a texture change on the side of the road.
+
+
+I also tried to use generator showed in the class to hold the image data. But, it would slow down the training significantly, since with the version of tensorflow and keras in the VM, I am still able to store all image in the memory. I decided not use generator. With Tensorflow version 2 and latest Keras, model fit would take a Sequence object to achieve similar result.
+
+ 
+
+#### 2. Final Model Architecture
+
+The final model architecture consisted of three convolution layers with kernal size of 5x5 and two convolution layers with kernal size of 3x3. And then followed by 100,10,1 dense layer to classify the final result.
+
+Here is a visualization of the architecture 
+
+![alt text][image2]
+
+#### 3. Creation of the Training Set & Training Process
+
+To capture good driving behavior, I first recorded one laps on track one using center lane driving and one lap reversed. Here is an example image of center lane driving:
+
+![alt text][image3]
+
+I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to how to hard recover when it is at side of the track.
+
+![alt text][image4]![alt text][image5]
+
+Then I repeated this process on track two in order to get more data points.
+
+![alt text][image6]
+
+To augment the data sat, I also flipped every images and multiply the steering to -1 to gain 2x data. 
+
+After the collection process, I had 4852x3 number of images. and after the flipping the images, I have 29112 images to feed into the model.
+
+
+I finally randomly shuffled the data set and put 20% of the data into a validation set. 
+
+I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was 7. After 7 epochs, the vaildation loss would increase from 0.05 to 0.06 to 0.7 sometime. I used an adam optimizer so that manually training the learning rate wasn't necessary.
+
+## Udacity Review Feedback
+### Model Architecture and Training Strategy
+You used convolutional layers with input normalized in the Lambda layer. Exponential Linear Units were built into the architecture of the neural network as a nonlinear activation function.
+
+Resources on activation methods:
+
+Commonly Used Activation Functions
+http://cs231n.github.io/neural-networks-1/#actfun
+
+### Learning Rate
+The [Adam optimiser](https://arxiv.org/pdf/1412.6980v8.pdf) was used as an [adaptive learning rate method](https://cs231n.github.io/neural-networks-3/#ada).
+
+### Architecture and Training Documentation
+You described the process that led you to the final implementation. Well done.
+
+I recommend watching the following talk given by Andrej Karpathy at Deep Learning School in Stanford to revise the design of convolutional neural network architectures if needed: https://www.youtube.com/watch?v=u6aEYuemt0M
+
+Optional video about training neural networks (and much more):
+
+Nuts and Bolts of Applying Deep Learning (Andrew Ng)
+https://www.youtube.com/watch?v=F1ka6a13S9I
+
+### Additional Resources
+[How Udacity’s Self-Driving Car Students Approach Behavioral Cloning](https://medium.com/udacity/how-udacitys-self-driving-car-students-approach-behavioral-cloning-5ffbfd2979e5)
+
+[Self-driving car in a simulator with a tiny neural network](https://medium.com/@xslittlegrass/self-driving-car-in-a-simulator-with-a-tiny-neural-network-13d33b871234#.2ugw8o56l)
+
+---
+## Dependencies
+
 This lab requires:
 
 * [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit)
@@ -119,7 +211,3 @@ Will run the video at 48 FPS. The default FPS is 60.
 
 ### Tips
 - Please keep in mind that training images are loaded in BGR colorspace using cv2 while drive.py load images in RGB to predict the steering angles.
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
-
