@@ -49,6 +49,13 @@ python drive.py model.h5
 #### 3. Submission code is usable and readable
 
 The model.py file contains the code for training and saving the convolution neural network. The file shows the pipeline I used for training and validating the model, and it contains comments to explain how the code works.
+V3 has: changed the correction to 0.31
+Epoch 7/7
+22900/22900 [==============================] - 29s 1ms/step - loss: 0.0632 - val_loss: 0.0581
+
+V4 Change the normilazation 
+Epoch 7/7
+22900/22900 [==============================] - 33s 1ms/step - loss: 0.0593 - val_loss: 0.0628
 
 ### Model Architecture and Training Strategy
 
